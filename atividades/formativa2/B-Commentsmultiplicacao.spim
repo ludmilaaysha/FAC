@@ -1,0 +1,111 @@
+.data
+
+.text
+main:
+    # $a0: multiplicando (M)
+    # $a1: multiplicador (Q)
+    # retornar o produto em hi e lo
+    # deve lidar com inteiros com sinal
+
+    # li $v0, 5
+    # syscall
+    # move $t0, $a0
+
+    # li $v0, 5
+    # syscall
+    # move $t1, $a0
+
+    # move $a0, $t0
+    # move $a1, $t1
+
+    li $a0, 3
+    li $a1, 9
+
+    jal multfac
+
+mfhi $a0
+mflo $a1
+
+li $v0, 1
+syscall
+
+li $v0, 1
+move $a0, $a1
+syscall
+
+li $v0, 10
+syscall
+
+
+    multfac:
+        li $t5, 32
+        li $t1, 2147483648
+
+        xor $t3, $a0, $a1
+        slt $t3, $t3, $zero # se sinais forem diferentes, armazena 1 em $t3
+    
+        move $t4, $a0
+        jal verifica_positivo
+        move $a0, $t4 # se M for negativo, se torna positivo
+
+        move $t4, $a1
+        jal verifica_positivo
+        move $a1, $t4 # se Q for negativo, se torna positivo
+
+        verifica_positivo:
+            bge $t4, $zero, retorna
+
+            nor $t4, $t4, $zero
+            addi $t4, $t4, 1
+
+            j retorna
+        
+        retorna:
+            jr $ra
+        
+        passo1:
+            move $s0, $a1 # $s0 = Q
+            move $s1, $zero # $s1 = 0
+
+        passo2:
+            andi $t0, $s0, 1 # $t0 = $s0 & 1
+            beq $t0, $zero, passo3
+
+            addu $s1, $s1 $a0 # Adiciona M à parte alta do produto
+            
+        passo3:
+            srl $s0, $s0, 1
+
+            jal adiciona1
+            srl $s1, $s1, 1
+
+            # decrementa o contador
+            addi, $t5, $t5, -1
+            beq $t5, $zero, muda_sinal # se contador for 0, sai do loop p/ muda sinal
+
+            j passo2
+
+
+        muda_sinal:
+            beq $t3, $zero, saida # se sinais eram iguais, permanece tudo igual
+
+            #se não forem, troca
+            nor $s0, $s0, $zero
+            nor $s1, $s1, $zero
+
+            move $t6, $s0
+            addi $s0, $s0, 1
+            bgt $s0, $t6, saida # se não der overflow na parte baixa, sai
+            addi $s1, $s1, 1 # se der overflow na parte baixa, adiciona 1 na parte alta
+
+        saida:
+            mthi $s1
+            mtlo $s0
+            j retorna # retorna para o lugar que chamou multfac
+
+        adiciona1:
+            andi $t0, $s1, 1 # $t0 = $s1 & 1
+            beq $t0, $zero, retorna
+
+            or $s0, $s0, $t1
+            j retorna

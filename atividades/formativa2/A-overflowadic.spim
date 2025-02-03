@@ -1,0 +1,71 @@
+.data
+str_overflow: .asciiz "overflow\n"
+
+.text
+main:
+    li $v0, 5
+    syscall
+    move $t0, $v0
+
+    li $v0, 5
+    syscall
+    move $t1, $v0
+
+    li $v0, 5
+    syscall
+    move $t2, $v0
+
+    beq $t0, $zero, soma_unsigned
+
+    bne $t0, $zero, soma_signed
+
+
+    soma_unsigned:
+        addu $t4, $t1, $t2 # soma numeros a e b
+
+        bltu $t4, $t1, overflow # se a soma for menor que a ou b, deu overflow
+        bltu $t4, $t2, overflow
+        
+        move $a0, $t4 # se a soma não for menor, imprime a soma
+        li $v0, 1
+        syscall
+
+        j saida
+
+    soma_signed:
+        addu $t4, $t1, $t2 # soma a e b, mas sem considerar o sinal para não haver interferências
+
+        xor $t5, $t1, $t2
+        blt $t5, $zero, no_overflow # se o sinal de a e b é diferente, não há como haver overflow
+
+        # sinais de a e b são iguais
+        xor $t5, $t4, $t1 # analisa se o sinal entre a soma e a é diferente
+        blt $t5, $zero, overflow # se o xor der negativo, sinais diferentes e houve overflow
+
+        xor $t5, $t4, $t2 # analisa se o sinal entre a soma e b é diferente
+        blt $t5, $zero, overflow # se o xor der negativo, sinais diferentes e houve overflow
+    
+        # se não caiu em nenhuma anterior, não houve overflow
+
+    no_overflow:
+        move $a0, $t4 # coloca resultado da soma em $a0
+        li $v0, 1 # imprime resultado da soma
+        syscall
+
+        j saida
+    
+    overflow:
+        li $v0, 4 # imprime string
+        la $a0, str_overflow # carrega endereço da string "overflow" em $a0
+        syscall
+
+        j saida
+
+    saida: 
+        li $v0, 10 # encerra programa
+        syscall
+    
+
+
+
+
